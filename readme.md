@@ -1,5 +1,5 @@
 # Zabzab api
 
-[-](https://wwebjs.dev/)
+[Mini Documentação da api](https://wwebjs.dev/)
 
-[-](https://youtu.be/PF_MWklEQpM)
+[Video no youtube](https://youtu.be/PF_MWklEQpM)
