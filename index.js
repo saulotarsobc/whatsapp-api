@@ -1,46 +1,96 @@
-const fs = require('fs');   
-const qrcode = require('qrcode-terminal')
-const { Client, LegacySessionAuth } = require('whatsapp-web.js');
+const makeWaSocket = require('@adiwajshing/baileys').default
+const { delay, useSingleFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require('@adiwajshing/baileys')
+const P = require('pino')
+const { unlink, existsSync, mkdirSync, readFileSync } = require('fs')
+const ZDGPath = './ZDGSessions/'
+const ZDGAuth = 'ZDG_auth_info.json'
 
-// Path where the session data will be stored
-const SESSION_FILE_PATH = './session.json';
-
-// Load the session data if it has been previously saved
-let sessionData;
-if(fs.existsSync(SESSION_FILE_PATH)) {
-    sessionData = require(SESSION_FILE_PATH);
+const ZDGGroupCheck = (jid) => {
+   const regexp = new RegExp(/^\d{18}@g.us$/)
+   return regexp.test(jid)
 }
 
-// Use the saved values
-const client = new Client({
-    authStrategy: new LegacySessionAuth({
-        session: sessionData
-    })
-});
+const ZDGUpdate = (ZDGsock) => {
+   ZDGsock.on('connection.update', ({ connection, lastDisconnect, qr }) => {
+      if (qr){
+         console.log('© BOT-ZDG - Qrcode: ', qr);
+      };
+      if (connection === 'close') {
+         const ZDGReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut
+         if (ZDGReconnect) ZDGConnection()
+         console.log(`© BOT-ZDG - CONEXÃO FECHADA! RAZÃO: ` + DisconnectReason.loggedOut.toString());
+         if (ZDGReconnect === false) {
+            const removeAuth = ZDGPath + ZDGAuth
+            unlink(removeAuth, err => {
+               if (err) throw err
+            })
+         }
+      }
+      if (connection === 'open'){
+         console.log('© BOT-ZDG - CONECTADO')
+      }
+   })
+}
 
-client.on('qr', (qr) => {
-    qrcode.generate(qr, {small: true})
-});
+const ZDGConnection = async () => {
+   const { version } = await fetchLatestBaileysVersion()
+   if (!existsSync(ZDGPath)) {
+      mkdirSync(ZDGPath, { recursive: true });
+   }
+   const { saveState, state } = useSingleFileAuthState(ZDGPath + ZDGAuth)
+   const config = {
+      auth: state,
+      logger: P({ level: 'error' }),
+      printQRInTerminal: true,
+      version,
+      connectTimeoutMs: 60000,
+      async getMessage(key) {
+         return { conversation: 'botzg' };
+      },
+   }
+   const ZDGsock = makeWaSocket(config);
+   ZDGUpdate(ZDGsock.ev);
+   ZDGsock.ev.on('creds.update', saveState);
 
-client.on('ready', () => {
-    console.log('Ciente preparado!\n\n');
-    console.log(client.info);
-    // console.log(client.getChats);
-});
+   const ZDGSendMessage = async (jid, msg) => {
+      await ZDGsock.presenceSubscribe(jid)
+      await delay(1500)
+      await ZDGsock.sendPresenceUpdate('composing', jid)
+      await delay(1000)
+      await ZDGsock.sendPresenceUpdate('paused', jid)
+      return await ZDGsock.sendMessage(jid, msg)
+   }
 
-client.on('message', msg => {
-    console.log(msg.body);
-    msg.reply(msg.body)
-});
+   ZDGsock.ev.on('messages.upsert', async ({ messages, type }) => {
+   const msg = messages[0]
+   const jid = msg.key.remoteJid
+   const ZDGUser = msg.pushName;
 
-// Save session values to the file upon successful auth
-client.on('authenticated', (session) => {
-    sessionData = session;
-    fs.writeFile(SESSION_FILE_PATH, JSON.stringify(session), (err) => {
-        if (err) {
-            console.error(err);
-        }
-    });
-});
+      if (!ZDGGroupCheck(jid) && !msg.key.fromMe && jid !== 'status@broadcast') {
+         console.log("© BOT-ZDG - MENSAGEM : ", msg)
+         ZDGsock.sendReadReceipt(jid, msg.key.participant, [msg.key.id])
 
-client.initialize();
+         if (msg.message.conversation.toLowerCase() === 'linkzdg') {
+            ZDGSendMessage(jid, {
+               forward: {
+                  key: { fromMe: true },
+                  message: {
+                     extendedTextMessage: {
+                        text:'*' + ZDGUser + '*, conheça a *COMUNIDADE ZDG* clicando no link: \n\n👉 https://zapdasgalaxias.com.br/',
+                        matchedText: 'https://zapdasgalaxias.com.br/',
+                        canonicalUrl: 'https://zapdasgalaxias.com.br/',
+                        title: 'Comunidade ZDG - ZAP das Galáxias',
+                        description: '© Pedrinho da NASA',
+                        jpegThumbnail: readFileSync('./assets/icone.png')
+                     }
+                  }
+               }
+            })
+               .then(result => console.log('ZDG Resultado: ', result))
+               .catch(err => console.log('ZDG Erro: ', err))
+         }
+      }
+   })
+}
+
+ZDGConnection()
