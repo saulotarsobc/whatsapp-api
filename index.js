@@ -2,8 +2,8 @@ const makeWaSocket = require('@adiwajshing/baileys').default
 const { delay, useSingleFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require('@adiwajshing/baileys')
 const P = require('pino')
 const { unlink, existsSync, mkdirSync, readFileSync } = require('fs')
-const ZDGPath = './ZDGSessions/'
-const ZDGAuth = 'ZDG_auth_info.json'
+const ZDGPath = './sessions/'
+const ZDGAuth = 'session.json'
 
 const ZDGGroupCheck = (jid) => {
    const regexp = new RegExp(/^\d{18}@g.us$/)
