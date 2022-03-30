@@ -17,13 +17,13 @@ client.on('qr', (qr) => {
 });
 
 client.on('ready', () => {
-    console.log('Client is ready!');
+    console.log('\nClinte preparado!\n');
 });
 
 client.on('message', msg => {
-    if (msg.body) {
+/*     if (msg.body) {
         console.log(msg.body);
-    }
+    } */
 });
 
 client.initialize();
