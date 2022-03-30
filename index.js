@@ -33,6 +33,14 @@ app.get('/', (req, res) => {
     res.send('Hello World!')
 })
 
+app.get('/sendMessage', (req, res) => {
+    res.send('sendMessage')
+    const number = "+559392135722";
+    const text = "Olpa";
+    const chatId = number.substring(1) + "@c.us";
+    client.sendMessage(chatId, text);
+})
+
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
 })
