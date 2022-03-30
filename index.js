@@ -57,5 +57,5 @@ app.post('/sendMessage', urlencodedParser, function (req, res) {
 })
 
 app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`)
+    console.log(`Aplicção rodando na porta ${port}`)
 })
