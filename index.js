@@ -17,8 +17,6 @@ var urlencodedParser = bodyParser.urlencoded({
 
 
 client.on('qr', (qr) => {
-    // Generate and scan this code with your phone
-    console.log('QR RECEIVED', qr);
     qrcode.generate(qr, {
         small: true
     })
@@ -36,7 +34,6 @@ client.on('message', msg => {
 
 client.initialize();
 
-// express
 app.get('/', (req, res) => {
     res.send('Hello World!')
 })
