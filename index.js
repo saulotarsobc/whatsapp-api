@@ -1,12 +1,20 @@
+const qrcode = require('qrcode-terminal')
 const {
     Client
 } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal')
-const express = require('express')
+
+const client = new Client();
+
+const express = require('express');
 const app = express()
 const port = 3000
 
-const client = new Client();
+var bodyParser = require('body-parser')
+var jsonParser = bodyParser.json()
+var urlencodedParser = bodyParser.urlencoded({
+    extended: false
+})
+
 
 client.on('qr', (qr) => {
     // Generate and scan this code with your phone
@@ -21,9 +29,9 @@ client.on('ready', () => {
 });
 
 client.on('message', msg => {
-/*     if (msg.body) {
+    if (msg.body) {
         console.log(msg.body);
-    } */
+    }
 });
 
 client.initialize();
@@ -33,12 +41,19 @@ app.get('/', (req, res) => {
     res.send('Hello World!')
 })
 
-app.get('/sendMessage', (req, res) => {
-    res.send('sendMessage')
-    const number = "+559392135722";
-    const text = "Olpa";
+app.post('/sendMessage', urlencodedParser, function (req, res) {
+    number = req.body.number;
+    msg = req.body.msg;
+
     const chatId = number.substring(1) + "@c.us";
-    client.sendMessage(chatId, text);
+
+    res.send({
+        'chatId': chatId,
+        'msg': msg
+    })
+
+    client.sendMessage(chatId, msg);
+
 })
 
 app.listen(port, () => {
