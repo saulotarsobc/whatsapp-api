@@ -25,15 +25,12 @@ client.on('qr', (qr) => {
 client.on('ready', () => {
     console.log('Ciente preparado!\n\n');
     console.log(client.info);
-    console.log(client.getChats);
+    // console.log(client.getChats);
 });
 
 client.on('message', msg => {
-    console.log(msg.id);
-
-/*     if (msg.body == 'oi') {
-        msg.reply('pong');
-    } */
+    console.log(msg.body);
+    msg.reply(msg.body)
 });
 
 // Save session values to the file upon successful auth
